@@ -8,7 +8,7 @@ import random
 H = 0.5  # 毒气源高度
 u = 1.05  # 实时风速，x方向上的风速
 # sigma_x = 0.105  # x方向上的标准差
-Q_calculate = 0.05
+Q_calculate = 0.05 # 毒气源强度
 
 def gaussian(x, y, q):
     z = 0
