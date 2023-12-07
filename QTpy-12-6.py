@@ -17,7 +17,7 @@ class MainWindow(QWidget):
         self.input3 = QLineEdit()
         self.calculate_button = QPushButton("Calculate")
         self.calculate_button.clicked.connect(self.calculate)
-
+        
         self.result_label = QLabel()
         self.figure_label = QLabel()
 
