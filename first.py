@@ -196,6 +196,10 @@ class Ui_Form(object):
         self.q_Label.setFont(font)
         self.q_Label.setObjectName("q_Label")
         self.gridLayout_4.addWidget(self.q_Label, 0, 3, 1, 1)
+        self.matplotlib = QtWidgets.QLabel(Form)
+        self.matplotlib.setGeometry(QtCore.QRect(600, 390, 441, 351))
+        self.matplotlib.setText("")
+        self.matplotlib.setObjectName("matplotlib")
 
         self.retranslateUi(Form)
         self.calculateButton.clicked.connect(Form.calculate) # type: ignore

@@ -34,8 +34,8 @@ def manual():
     y = np.array([])
     y = np.append(y, y_input_arr)# 将x，y转为数组
     win4.mainloop()
-    return #输出两个值组成的列表，在后面代码中会拆开（还没写完）
-
+    return 
+    #输出两个值组成的列表，在后面代码中会拆开（还没写完）
 
 
 

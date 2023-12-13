@@ -439,6 +439,19 @@
     </item>
    </layout>
   </widget>
+  <widget class="QLabel" name="matplotlib">
+   <property name="geometry">
+    <rect>
+     <x>600</x>
+     <y>390</y>
+     <width>441</width>
+     <height>351</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections>

@@ -1,5 +1,6 @@
 import sys
 import matplotlib
+
 matplotlib.use('Qt5Agg')
 
 from PyQt6 import QtCore, QtWidgets
@@ -31,7 +32,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # Create our pandas DataFrame with some simple
         # data and headers.
         df = pd.DataFrame([
-           [0, 10], [5, 15], [2, 20], [15, 25], [4, 10],
+            [0, 10], [5, 15], [2, 20], [15, 25], [4, 10],
         ], columns=['A', 'B'])
 
         # plot the pandas DataFrame, passing in the
