@@ -14,7 +14,7 @@ Q_calculate = 0.05  # 毒气源强度
 def gaussian(x, y, q):
     z = 0
     distance = np.sqrt(x ** 2 + y ** 2)  # 距原点距离
-    sigma_y = 0.22 * distance / np.sqrt(1 + 0.0001 * distance)  # y方向上的标准差
+    sigma_y = 0.22 * x / np.sqrt(1 + 0.0001 * x)  # y方向上的标准差
     sigma_z = 0.20 * x  # z方向上的标准差
 
     term1 = q / (2 * math.pi * u * sigma_y * sigma_z)
@@ -30,7 +30,7 @@ def gaussian(x, y, q):
 
 
 known_heat_sources = [(2, 3, gaussian(2, 3, Q_calculate)), (7, 5, gaussian(7, 5, Q_calculate)),
-                      (4, 7, gaussian(4, 7, Q_calculate))]  # Initialize with zero heat
+                      (4, 7, gaussian(4, 7, Q_calculate)), (3, 5, gaussian(3, 5, Q_calculate)), (10, 7, gaussian(10, 7, Q_calculate))]  # Initialize with zero heat
 
 
 def objective(params):

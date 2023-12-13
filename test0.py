@@ -17,7 +17,7 @@ def gaussian(x, y, q):
     z = 0
 
     distance = np.sqrt(x**2 + y**2) # 距原点距离
-    sigma_y = 0.22 * distance/np.sqrt(1+0.0001*distance)  # y方向上的标准差
+    sigma_y = 0.22 * x/np.sqrt(1+0.0001*x)  # y方向上的标准差
     sigma_z = 0.20 * x  # z方向上的标准差
 
     term1 = q / (2 * math.pi * u * sigma_y * sigma_z)
@@ -42,7 +42,7 @@ known_heat_sources = [(2, 3, gaussian(2, 3, Q_calculate)), (7, 5, gaussian(7, 5,
 def calculate_error(xs, ys, qs):
     error = 0
     for (x, y, heat) in known_heat_sources:
-        error += np.sqrt((heat**2 - gaussian(x-xs, y-ys, qs)**2)**2)
+        error += np.sqrt((heat**2 - gaussian(x-xs, y-ys, qs))**2)**2
     return error
 
 # 定义子循环的函数

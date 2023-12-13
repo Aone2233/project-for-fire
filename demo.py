@@ -1,11 +1,8 @@
 import sys
 import math
 import numpy as np
-from PyQt5.QtGui import QPixmap
 from scipy.optimize import minimize
 from PyQt5.QtWidgets import *
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
-from matplotlib.figure import Figure
 
 # q = 0.05  # 毒气源强度
 H = 0.5  # 毒气源高度
@@ -16,11 +13,6 @@ Q_calculate = 0.05  # 毒气源强度
 #  此处引入的是我们设计的界面的类，在first.py文件中
 from first import Ui_Form
 
-class MplCanvas(FigureCanvasQTAgg):
-    def __init__(self, parent=None, width=5, height=4, dpi=100):
-        fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = fig.add_subplot(111)
-        super(MplCanvas, self).__init__(fig)
 
 # 新建类来继承UiForm，这样我们再更改界面后，不用再去修改我们写的逻辑
 class DemoUi(QWidget, Ui_Form):
@@ -28,11 +20,7 @@ class DemoUi(QWidget, Ui_Form):
     def __init__(self):
         super(DemoUi, self).__init__()
         self.setupUi(self)
-        self.setWindowTitle("毒气泄漏源反演与重绘制")
-        self.canvas = MplCanvas(self, width=5, height=4, dpi=100)
-        layout = QVBoxLayout()
-        layout.addWidget(self.canvas)
-        self.matplotlib.setLayout(layout)
+
     # 实现定义的槽函数逻辑
     def on_calculateButton_clicked(self):
         # 获取输入框的值
@@ -47,7 +35,7 @@ class DemoUi(QWidget, Ui_Form):
         con3_y = self.con3_y.text()
         con3_q = self.con3_q.text()
 
-        # 定义高斯函数计算
+        # 将输入框的值转换为float类型
         def gaussian(x, y, q):
             z = 0
             distance = np.sqrt(x ** 2 + y ** 2)  # 距原点距离
@@ -67,8 +55,7 @@ class DemoUi(QWidget, Ui_Form):
 
         # 已知的热量点位
         known_heat_sources = [(2, 3, gaussian(2, 3, Q_calculate)), (7, 5, gaussian(7, 5, Q_calculate)),
-                              (4, 7, gaussian(4, 7, Q_calculate))]  # Initialize with zero heat
-
+                                  (4, 7, gaussian(4, 7, Q_calculate))]  # Initialize with zero heat
         def objective(params):
             xs, ys, q = params
             error = 0
@@ -90,18 +77,6 @@ class DemoUi(QWidget, Ui_Form):
         iterations = result.nit
         # 将迭代次数设置到result_interation上
         self.result_interation.setText(str(iterations))
-
-        # 创建热力图
-        x = np.linspace(-10, 10, 500)
-        y = np.linspace(-10, 10, 500)
-        X, Y = np.meshgrid(x, y)
-        Z = gaussian(X - result.x[0], Y - result.x[1], result.x[2])
-        self.canvas.axes.imshow(Z, extent=[-10, 10, -10, 10], origin='lower', cmap='hot', alpha=0.5)
-        self.canvas.axes.set_title('Heatmap')
-        self.canvas.draw()
-        # 将画布上的图像捕获为QPixmap，并设置为matplotlib标签的图像
-        pixmap = QPixmap.grabWidget(self.canvas)
-        self.matplotlib.setPixmap(pixmap)
 
     def calculate(self):
         pass
