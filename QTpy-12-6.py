@@ -1,9 +1,10 @@
 import sys
 
-from PyQt5.QtGui import QImage, QPixmap
-from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout
 import matplotlib.pyplot as plt
 import numpy as np
+from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtWidgets import QApplication, QWidget, QLabel, QLineEdit, QPushButton, QVBoxLayout
+
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -19,7 +20,7 @@ class MainWindow(QWidget):
         self.input3 = QLineEdit()
         self.calculate_button = QPushButton("Calculate")
         self.calculate_button.clicked.connect(self.calculate)
-        
+
         self.result_label = QLabel()
         self.figure_label = QLabel()
 
@@ -65,6 +66,7 @@ class MainWindow(QWidget):
         pixmap = QPixmap.fromImage(qimage)
         return pixmap
 
+
 def calculate_leakage(x1, y1, x2, y2, x3, y3):
     # 在这里进行泄漏点计算的具体逻辑
     # 这里只是一个示例，您需要根据您的代码进行相应的计算
@@ -73,6 +75,7 @@ def calculate_leakage(x1, y1, x2, y2, x3, y3):
     result_intensity = 0.5
 
     return result_x, result_y, result_intensity
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
