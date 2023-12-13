@@ -2,7 +2,8 @@ import math
 import numpy as np
 from scipy.optimize import minimize
 import matplotlib.pyplot as plt
-import random
+from scipy.optimize import differential_evolution
+
 
 # q = 0.05  # 毒气源强度
 H = 0.5  # 毒气源高度
@@ -24,9 +25,10 @@ def gaussian(x, y, q):
 
     term3 = np.exp(-(z - H) ** 2 / (2 * sigma_z ** 2)) + np.exp(-(z + H) ** 2 / (2 * sigma_z ** 2))
 
-    gau_result = term1 * term2 * term3 * 100000
+    gau_result = term1 * term2 * term3 * 500000
     # print(term1, term2, term3)
-    return gau_result
+    # Use np.where to return gau_result where x >= 0, else return 0
+    return np.where(x >= 0, gau_result, 0)
 
 
 known_heat_sources = [(2, 3, gaussian(2, 3, Q_calculate)), (7, 5, gaussian(7, 5, Q_calculate)),
@@ -36,25 +38,42 @@ known_heat_sources = [(2, 3, gaussian(2, 3, Q_calculate)), (7, 5, gaussian(7, 5,
 def objective(params):
     xs, ys, q = params
     error = 0
+    wx, wy, wq = 0.4, 0.4, 0.2  # Set the weights for x, y, and q
     for (x, y, heat) in known_heat_sources:
-        error += np.sqrt((heat - gaussian(x - xs, y - ys, q)) ** 2)
-    return error  # Minimize the negative of the Gaussian function
+        weight = heat
+        error_x = wx * (x - xs) ** 2
+        error_y = wy * (y - ys) ** 2
+        error_q = wq * (heat - gaussian(x, y, q)) ** 2
+        error += weight * (error_x + error_y + error_q)
+    return error
+def objective_1(params):
+    xs, ys, qs = params
+    error = 0
+    for (x, y, heat) in known_heat_sources:
+        weight = heat
+        error += weight * (heat - gaussian(x - xs, y - ys, qs)) ** 2
+    return error
 
 
-# Initial guess
-initial_guess = [0.5, 0.5, 0.5]
+# Define the bounds for the parameters
+bounds = [(-1, 0.5), (-0.5, 1), (0, 2)]
+
 
 # Use optimization algorithm to find the source coordinates
-result = minimize(objective, initial_guess, method='L-BFGS-B', options={'maxiter': 10000})
-# 最小化objection，初值条件是initial_guess，采用的算法是L-BFGS-B
+result = differential_evolution(objective, bounds, maxiter=50000, tol=1e-10, atol=1e-10)
+
+initial_guess = [0.5, 0.5, result.x[2]]
+result_1 = minimize(objective_1, initial_guess, method='TNC', options={'maxCGit': 20000, 'ftol': 1e-20, 'xtol': 1e-20, 'gtol': 1e-20})
+# 最小化objection，初值条件是initial_guess，采用的算法是TNC
 
 # 获取迭代次数
 iterations = result.nit
+iterations_1 = result_1.nit
 
 # 输出泄露点坐标和迭代次数
-print(f"反解的泄漏源点坐标：({result.x[0]}, {result.x[1]})")
+print(f"反解的泄漏源点坐标：({result_1.x[0]}, {result_1.x[1]})")
 print("泄漏源强度：", result.x[2])
-print("迭代次数：", iterations)
+print("迭代次数：", iterations, iterations_1)
 
 # Get the coordinates of the origin
 origin_x = result.x[0]
