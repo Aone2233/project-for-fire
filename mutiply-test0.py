@@ -31,15 +31,15 @@ def gaussian(x, y, q):
     return np.where(x >= 0, gau_result, 0)
 
 
-xo = random.uniform(-10, 10)
-yo = random.uniform(-10, 10)
+xo = random.uniform(-2, 2)
+yo = random.uniform(-2, 2)
 
 # 已知的热量点位
 known_heat_sources = [(2, 3, gaussian(2 - yo, 3 - yo, Q_calculate)),
-                      (2, -3, gaussian(7 - xo, 5 - yo, Q_calculate)),
+                      (2, -3, gaussian(2 - xo, -3 - yo, Q_calculate)),
                       (4, 7, gaussian(4 - xo, 7 - yo, Q_calculate)),
-                      (4, -7, gaussian(3 - xo, 5 - yo, Q_calculate)),
-                      (7, 0, gaussian(10 - xo, 7 - yo, Q_calculate))]  # Initialize with zero heat
+                      (4, -7, gaussian(4 - xo, -7 - yo, Q_calculate)),
+                      (7, 0, gaussian(7 - xo, 0 - yo, Q_calculate))]  # Initialize with zero heat
 
 
 def objective(params):
@@ -97,28 +97,28 @@ print("迭代次数：", iterations, iterations_1)
 origin_x = result.x[0]
 origin_y = result.x[1]
 
-# # Create a meshgrid covering the 500x500 range
-# x = np.linspace(origin_x - 250, origin_x + 250, 500)
-# y = np.linspace(origin_y - 250, origin_y + 250, 500)
-# X, Y = np.meshgrid(x, y)
-#
-# # Calculate the Gaussian concentration for each grid point
-# Z = gaussian(X, Y, result.x[2])
-#
-# # 绘制热图
-# plt.imshow(Z, extent=[-20.0, 20.0, -20.0, 20.0], origin='lower', cmap='hot', vmin=0, vmax=70)
-#
-# # Add a colorbar
-# plt.colorbar()
-#
-# # Add labels and title
-# plt.xlabel('X')
-# plt.ylabel('Y')
-# plt.title('Gaussian Concentration Heatmap')
-#
-# # Add known heat sources to the plot
-# for (x, y, heat) in known_heat_sources:
-#     plt.scatter(x, y, color='green', marker='o')
-#
-# # Show the plot
-# plt.show()
+# Create a meshgrid covering the 500x500 range
+x = np.linspace(origin_x - 250, origin_x + 250, 500)
+y = np.linspace(origin_y - 250, origin_y + 250, 500)
+X, Y = np.meshgrid(x, y)
+
+# Calculate the Gaussian concentration for each grid point
+Z = gaussian(X, Y, result.x[2])
+
+# 绘制热图
+plt.imshow(Z, extent=[-20.0, 20.0, -20.0, 20.0], origin='lower', cmap='hot', vmin=0, vmax=70)
+
+# Add a colorbar
+plt.colorbar()
+
+# Add labels and title
+plt.xlabel('X')
+plt.ylabel('Y')
+plt.title('Gaussian Concentration Heatmap')
+
+# Add known heat sources to the plot
+for (x, y, heat) in known_heat_sources:
+    plt.scatter(x, y, color='green', marker='o')
+
+# Show the plot
+plt.show()
