@@ -3,6 +3,7 @@ import numpy as np
 from scipy.optimize import minimize
 import matplotlib.pyplot as plt
 from scipy.optimize import differential_evolution
+import random
 
 # q = 0.05  # 毒气源强度
 H = 0.5  # 毒气源高度
@@ -30,15 +31,21 @@ def gaussian(x, y, q):
     return np.where(x >= 0, gau_result, 0)
 
 
-known_heat_sources = [(2, 3, gaussian(2, 3, Q_calculate)), (7, 5, gaussian(7, 5, Q_calculate)),
-                      (4, 7, gaussian(4, 7, Q_calculate)), (3, 5, gaussian(3, 5, Q_calculate)),
-                      (10, 7, gaussian(10, 7, Q_calculate))]  # Initialize with zero heat
+xo = random.uniform(-10, 10)
+yo = random.uniform(-10, 10)
+
+# 已知的热量点位
+known_heat_sources = [(2 - xo, 3 - yo, gaussian(2 - yo, 3 - yo, Q_calculate)),
+                      (7 - xo, 5 - yo, gaussian(7 - xo, 5 - yo, Q_calculate)),
+                      (4 - xo, 7 - yo, gaussian(4 - xo, 7 - yo, Q_calculate)),
+                      (3 - xo, 5 - yo, gaussian(3 - xo, 5 - yo, Q_calculate)),
+                      (10 - xo, 7 - yo, gaussian(10 - xo, 7 - yo, Q_calculate))]  # Initialize with zero heat
 
 
 def objective(params):
     xs, ys, q = params
     error = 0
-    wx, wy, wq = 0.4, 0.4, 0.2  # Set the weights for x, y, and q
+    wx, wy, wq = 0.3, 0.3, 0.4  # Set the weights for x, y, and q
     for (x, y, heat) in known_heat_sources:
         weight = heat
         error_x = wx * (x - xs) ** 2
@@ -54,7 +61,7 @@ bounds = [(-1, 0.5), (-0.5, 1), (0, 2)]
 # Use optimization algorithm to find the source coordinates
 result = differential_evolution(objective, bounds, maxiter=50000, tol=1e-10, atol=1e-10)
 
-bounds_1 = [(-1, 0.5), (-0.5, 1)]
+initial_guess = [1.0, 1.0]
 
 # Known heat strength from the result of the heat source strength optimization
 known_heat_strength = result.x[2]
@@ -64,23 +71,25 @@ def objective_1(params):
     xs, ys = params
     error = 0
     for (x, y, heat) in known_heat_sources:
-        weight = np.sqrt(x ** 2 + y ** 2)  # Set the weight as the distance to the origin
-        error += weight * np.abs(heat - gaussian(x - xs, y - ys, known_heat_strength))  # Use absolute error
-    error += 0.01 * (xs ** 2 + ys ** 2)  # Add regularization term
+        error_x = (x - xs) ** 2
+        error_y = (y - ys) ** 2
+        error_heat = (heat - gaussian(x, y, known_heat_strength)) ** 2
+        error += np.sqrt(error_x + error_y + error_heat)
     return error
 
 
 # Use optimization algorithm to find the source coordinates
-result_1 = differential_evolution(objective_1, bounds_1, maxiter=50000, tol=1e-10, atol=1e-10)
-# 最小化objection，初值条件是initial_guess，采用的算法是TNC
+result_1 = minimize(objective_1, initial_guess, method='L-BFGS-B')
+# 最小化objection，初值条件是initial_guess，采用的算法是L-BFGS-B
 
 # 获取迭代次数
 iterations = result.nit
 iterations_1 = result_1.nit
 
 # 输出泄露点坐标和迭代次数
-print(f"反解的泄漏源点坐标：({result_1.x[0]}, {result_1.x[1]})")
-print("泄漏源强度：", result.x[2])
+print(f"初始的泄漏源点坐标：({ '%.6f' % xo}, { '%.6f' % yo})")
+print(f"反解的泄漏源点坐标：({ '%.4f' % result_1.x[0]}, { '%.4f' % result_1.x[1]})")
+print("泄漏源强度：", '%.10f' % result.x[2])
 print("迭代次数：", iterations, iterations_1)
 
 # Get the coordinates of the origin
@@ -96,7 +105,7 @@ X, Y = np.meshgrid(x, y)
 Z = gaussian(X, Y, result.x[2])
 
 # 绘制热图
-plt.imshow(Z, extent=[-5.0, 5.0, -5.0, 5.0], origin='lower', cmap='hot', vmin=0, vmax=70)
+plt.imshow(Z, extent=[-20.0, 20.0, -20.0, 20.0], origin='lower', cmap='hot', vmin=0, vmax=70)
 
 # Add a colorbar
 plt.colorbar()
@@ -105,6 +114,10 @@ plt.colorbar()
 plt.xlabel('X')
 plt.ylabel('Y')
 plt.title('Gaussian Concentration Heatmap')
+
+# Add known heat sources to the plot
+for (x, y, heat) in known_heat_sources:
+    plt.scatter(x, y, color='green', marker='o')
 
 # Show the plot
 plt.show()
