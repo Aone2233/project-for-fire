@@ -4,7 +4,6 @@ from scipy.optimize import minimize
 import matplotlib.pyplot as plt
 from scipy.optimize import differential_evolution
 
-
 # q = 0.05  # 毒气源强度
 H = 0.5  # 毒气源高度
 u = 1.05  # 实时风速，x方向上的风速
@@ -32,7 +31,8 @@ def gaussian(x, y, q):
 
 
 known_heat_sources = [(2, 3, gaussian(2, 3, Q_calculate)), (7, 5, gaussian(7, 5, Q_calculate)),
-                      (4, 7, gaussian(4, 7, Q_calculate)), (3, 5, gaussian(3, 5, Q_calculate)), (10, 7, gaussian(10, 7, Q_calculate))]  # Initialize with zero heat
+                      (4, 7, gaussian(4, 7, Q_calculate)), (3, 5, gaussian(3, 5, Q_calculate)),
+                      (10, 7, gaussian(10, 7, Q_calculate))]  # Initialize with zero heat
 
 
 def objective(params):
@@ -46,24 +46,32 @@ def objective(params):
         error_q = wq * (heat - gaussian(x, y, q)) ** 2
         error += weight * (error_x + error_y + error_q)
     return error
-def objective_1(params):
-    xs, ys, qs = params
-    error = 0
-    for (x, y, heat) in known_heat_sources:
-        weight = heat
-        error += weight * (heat - gaussian(x - xs, y - ys, qs)) ** 2
-    return error
 
 
 # Define the bounds for the parameters
 bounds = [(-1, 0.5), (-0.5, 1), (0, 2)]
 
-
 # Use optimization algorithm to find the source coordinates
 result = differential_evolution(objective, bounds, maxiter=50000, tol=1e-10, atol=1e-10)
 
-initial_guess = [0.5, 0.5, result.x[2]]
-result_1 = minimize(objective_1, initial_guess, method='TNC', options={'maxCGit': 20000, 'ftol': 1e-20, 'xtol': 1e-20, 'gtol': 1e-20})
+bounds_1 = [(-1, 0.5), (-0.5, 1)]
+
+# Known heat strength from the result of the heat source strength optimization
+known_heat_strength = result.x[2]
+
+
+def objective_1(params):
+    xs, ys = params
+    error = 0
+    for (x, y, heat) in known_heat_sources:
+        weight = np.sqrt(x ** 2 + y ** 2)  # Set the weight as the distance to the origin
+        error += weight * np.abs(heat - gaussian(x - xs, y - ys, known_heat_strength))  # Use absolute error
+    error += 0.01 * (xs ** 2 + ys ** 2)  # Add regularization term
+    return error
+
+
+# Use optimization algorithm to find the source coordinates
+result_1 = differential_evolution(objective_1, bounds_1, maxiter=50000, tol=1e-10, atol=1e-10)
 # 最小化objection，初值条件是initial_guess，采用的算法是TNC
 
 # 获取迭代次数
