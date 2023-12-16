@@ -20,12 +20,12 @@ yo = random.uniform(-5, 5)
 def gaussian(x, y, q):
     z = 0
     distance = np.sqrt(x ** 2 + y ** 2)  # 距原点距离
-    sigma_y = 0.22 * x / (np.sqrt(1 + 0.0001 * x) + 1e-8)  # y方向上的标准差
-    sigma_z = 0.20 * x + 1e-8  # z方向上的标准差
+    sigma_y = 0.22 * x / (np.sqrt(1 + 0.0001 * x) + 1e-20)  # y方向上的标准差
+    sigma_z = 0.20 * x + 1e-20  # z方向上的标准差
 
     # Replace values in sigma_y and sigma_z that are less than 1e-8 with 1e-8
-    sigma_y = np.where(sigma_y < 1e-8, 1e-8, sigma_y)
-    sigma_z = np.where(sigma_z < 1e-8, 1e-8, sigma_z)
+    sigma_y = np.where(sigma_y < 1e-20, 1e-20, sigma_y)
+    sigma_z = np.where(sigma_z < 1e-20, 1e-20, sigma_z)
 
     term1 = q / (2 * math.pi * u * sigma_y * sigma_z)
 
@@ -42,7 +42,7 @@ def gaussian(x, y, q):
 
 # 已知的热量点位
 known_heat_sources = [(2, 3, gaussian(2 - yo, 3 - yo, Q_calculate)),
-                      (2, -3, gaussian(2 - xo, -3 - yo, Q_calculate)),
+                      (2, 7, gaussian(2 - xo, 7 - yo, Q_calculate)),
                       (4, 7, gaussian(4 - xo, 7 - yo, Q_calculate)),
                       (4, -7, gaussian(4 - xo, -7 - yo, Q_calculate)),
                       (15, 10, gaussian(15 - xo, 10 - yo, Q_calculate)),
@@ -61,9 +61,9 @@ def objective(params):
 bounds = [(-20.0, 20.0), (-20.0, 20.0), (0, 2.0)]
 
 # Use optimization algorithm to find the source coordinates
-result = differential_evolution(objective, bounds, tol=1e-15, atol=1e-15)
+result = differential_evolution(objective, bounds, tol=1e-15, atol=1e-15, maxiter=10000)
 
-initial_guess = [2.0, 2.0]
+initial_guess: np.ndarray = np.array([5.0, 5.0])  # 初始猜测的泄漏源点坐标
 
 # Known heat strength from the result of the heat source strength optimization
 known_heat_strength = result.x[2]
