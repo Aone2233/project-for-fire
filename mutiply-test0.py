@@ -42,7 +42,7 @@ def gaussian(x, y, q):
 
 # 已知的热量点位
 known_heat_sources = [(2, 3, gaussian(2 - yo, 3 - yo, Q_calculate)),
-                      (2, 7, gaussian(2 - xo, 7 - yo, Q_calculate)),
+                      (2, -3, gaussian(2 - xo, -3 - yo, Q_calculate)),
                       (4, 7, gaussian(4 - xo, 7 - yo, Q_calculate)),
                       (4, -7, gaussian(4 - xo, -7 - yo, Q_calculate)),
                       (15, 10, gaussian(15 - xo, 10 - yo, Q_calculate)),

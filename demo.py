@@ -127,9 +127,17 @@ class DemoUi(QWidget, Ui_Form):
                 error += np.sqrt((heat - gaussian(x - xs, y - ys, qs)) ** 2)
             return error
 
+        # 进行蒙特卡罗模拟
+        num_samples = 500000
+        num_threads = 5
+
+
         # 定义子循环的函数
         def worker(start, end):
             global min_error, best_xs, best_ys, best_q
+            min_error = 1e-20
+            best_xs, best_ys = None, None
+            best_q = None
             for i in range(start, end):
                 xs, ys = random.uniform(-10, 10), random.uniform(-10, 10)
                 qs = random.uniform(0, 1)
@@ -139,12 +147,6 @@ class DemoUi(QWidget, Ui_Form):
                     best_xs, best_ys = xs, ys
                     best_q = qs
 
-        # 进行蒙特卡罗模拟
-        num_samples = 500000
-        num_threads = 5
-        min_error = float('inf')
-        best_xs, best_ys = None, None
-        best_q = None
 
         # 开启多线程
         threads = []
