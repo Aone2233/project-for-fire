@@ -28,6 +28,7 @@ class DemoUi(QWidget, Ui_Form):
         self.calculateButton2.clicked.connect(self.on_calculateButton2_clicked)
         self.progress_bar.setValue(0)
 
+
     # 实现定义的槽函数逻辑
     def on_calculateButton1_clicked(self):
         # 获取输入框的值
