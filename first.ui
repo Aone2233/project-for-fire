@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1263</width>
-    <height>847</height>
+    <width>1202</width>
+    <height>792</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -26,7 +26,6 @@
     <font>
      <family>3D Isometric</family>
      <pointsize>12</pointsize>
-     <weight>75</weight>
      <bold>true</bold>
     </font>
    </property>
@@ -1105,8 +1104,8 @@
   <widget class="QWidget" name="widget" native="true">
    <property name="geometry">
     <rect>
-     <x>700</x>
-     <y>410</y>
+     <x>680</x>
+     <y>420</y>
      <width>391</width>
      <height>341</height>
     </rect>

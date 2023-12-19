@@ -23,7 +23,7 @@ class Ui_Form(object):
     def setupUi(self, Form):
         if not Form.objectName():
             Form.setObjectName(u"Form")
-        Form.resize(1263, 847)
+        Form.resize(1202, 792)
         self.title = QLabel(Form)
         self.title.setObjectName(u"title")
         self.title.setGeometry(QRect(40, 20, 391, 41))
@@ -449,7 +449,7 @@ class Ui_Form(object):
         self.calculateButton2.setFont(font1)
         self.widget = QWidget(Form)
         self.widget.setObjectName(u"widget")
-        self.widget.setGeometry(QRect(700, 410, 391, 341))
+        self.widget.setGeometry(QRect(680, 420, 391, 341))
         self.scrollArea.raise_()
         self.title.raise_()
         self.calculateButton1.raise_()

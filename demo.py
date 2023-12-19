@@ -8,13 +8,13 @@ from scipy.optimize import minimize
 from PyQt5.QtWidgets import *
 import random
 
-from first import Ui_Form
-
 # q = 0.05  # 毒气源强度
 H = 0.5  # 毒气源高度
 u = 1.05  # 实时风速，x方向上的风速
 # sigma_x = 0.105  # x方向上的标准差
 Q_calculate = 0.05  # 毒气源强度
+
+from first import Ui_Form
 
 
 class DemoUi(QWidget, Ui_Form):
@@ -26,8 +26,9 @@ class DemoUi(QWidget, Ui_Form):
         self.setWindowIcon(QIcon('logo.ico'))
         self.calculateButton1.clicked.connect(self.on_calculateButton1_clicked)
         self.calculateButton2.clicked.connect(self.on_calculateButton2_clicked)
-        self.progress_bar.setValue(0)
+        # self.progress_bar.setValue(0)
 
+        # self.plot_widget = pg.PlotWidget()
 
     # 实现定义的槽函数逻辑
     def on_calculateButton1_clicked(self):
@@ -71,7 +72,7 @@ class DemoUi(QWidget, Ui_Form):
         # 将迭代次数设置到result_interation上
         self.result_interation.setText(str(iterations))
         # Update the plot with simulation results
-        self.update_plot([result.x[0]], [result.x[1]], [result.x[2]])
+        # self.update_plot([result.x[0]], [result.x[1]], [result.x[2]])
 
     def calculate(self):
         pass
@@ -98,7 +99,7 @@ class DemoUi(QWidget, Ui_Form):
         def calculate_error(xs, ys, qs):
             error = 0
             for (x, y, heat) in known_heat_sources:
-                error += (heat ** 2 - gaussian(x - xs, y - ys, qs)) ** 2
+                error += (heat - gaussian(x - xs, y - ys, qs))**2
             return error
 
         # 进行蒙特卡罗模拟
@@ -117,9 +118,9 @@ class DemoUi(QWidget, Ui_Form):
                 min_error = error
                 best_xs, best_ys, best_q = xs, ys, qs
 
-            # 计算进度
-            progress = int(round((i / num_samples) * 100))
-            self.progress_bar.setValue(progress)
+            # # 计算进度
+            # progress = int(round((i / num_samples) * 100))
+            # self.progress_bar.setValue(progress)
 
         # 将计算得到的result值设置到result_x，result_y和result_q上
         self.result_out_x.setText(str(best_xs) if best_xs is not None else '')
@@ -130,19 +131,19 @@ class DemoUi(QWidget, Ui_Form):
         # 将迭代次数设置到result_interation上
         self.result_interation.setText(str(iterations))
         # Update the plot with simulation results
-        self.update_plot([best_xs], [best_ys], [best_q])
+        # self.update_plot([best_xs], [best_ys], [best_q])
 
-    def update_plot(self, xs, ys, qs):
-        # Clear previous plot data
-        self.plot_widget.clear()
-
-        # Plot the new data
-        self.plot_widget.plot(xs, ys, pen=None, symbol='o', symbolBrush=(255, 0, 0), symbolSize=10)
-
-        # Set labels and title
-        self.plot_widget.setLabel('left', 'Y Axis')
-        self.plot_widget.setLabel('bottom', 'X Axis')
-        self.plot_widget.setTitle('Simulation Results')
+    # def update_plot(self, xs, ys, qs):
+    #     # Clear previous plot data
+    #     self.plot_widget.clear()
+    #
+    #     # Plot the new data
+    #     self.plot_widget.plot(xs, ys, pen=None, symbol='o', symbolBrush=(255, 0, 0), symbolSize=10)
+    #
+    #     # Set labels and title
+    #     self.plot_widget.setLabel('left', 'Y Axis')
+    #     self.plot_widget.setLabel('bottom', 'X Axis')
+    #     self.plot_widget.setTitle('Simulation Results')
 
     def calculate(self):
         pass
