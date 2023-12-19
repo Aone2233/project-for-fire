@@ -7,6 +7,7 @@ from PyQt5.QtGui import QIcon
 from scipy.optimize import minimize
 from PyQt5.QtWidgets import *
 import random
+import matplotlib.pyplot as plt
 
 # q = 0.05  # 毒气源强度
 H = 0.5  # 毒气源高度
@@ -15,7 +16,8 @@ u = 1.05  # 实时风速，x方向上的风速
 Q_calculate = 0.05  # 毒气源强度
 
 from first import Ui_Form
-
+#全局变量声明
+global con1_x, con1_y, con1_q, con2_x, con2_y, con2_q, con3_x, con3_y, con3_q, xs_r, ys_r, qs_r
 
 class DemoUi(QWidget, Ui_Form):
     # 类的初始化
@@ -26,14 +28,17 @@ class DemoUi(QWidget, Ui_Form):
         self.setWindowIcon(QIcon('logo.ico'))
         self.calculateButton1.clicked.connect(self.on_calculateButton1_clicked)
         self.calculateButton2.clicked.connect(self.on_calculateButton2_clicked)
+        self.plotButton.clicked.connect(self.on_plotButton_clicked)  # 假设你有一个名为plotButton的按钮
         # self.progress_bar.setValue(0)
+        self.xs_r = None
+        self.ys_r = None
+        self.qs_r = None
 
         # self.plot_widget = pg.PlotWidget()
 
     # 实现定义的槽函数逻辑
     def on_calculateButton1_clicked(self):
         # 获取输入框的值
-        global con1_x, con1_y, con1_q, con2_x, con2_y, con2_q, con3_x, con3_y, con3_q
         con1_x = self.con1_x.text()
         con1_y = self.con1_y.text()
         con1_q = self.con1_q.text()
@@ -47,13 +52,13 @@ class DemoUi(QWidget, Ui_Form):
         # 将输入框的值转换为float类型
 
         # 已知的热量点位
-        known_heat_sources = [(2, 3, gaussian(2, 3, Q_calculate)), (7, 5, gaussian(7, 5, Q_calculate)),
+        self.known_heat_sources = [(2, 3, gaussian(2, 3, Q_calculate)), (7, 5, gaussian(7, 5, Q_calculate)),
                               (4, 7, gaussian(4, 7, Q_calculate))]  # Initialize with zero heat
 
         def objective(params):
             xs, ys, q = params
             error = 0
-            for (x, y, heat) in known_heat_sources:
+            for (x, y, heat) in self.known_heat_sources:
                 error += np.sqrt((heat - gaussian(x - xs, y - ys, q)) ** 2)
             return error  # Minimize the negative of the Gaussian function
 
@@ -72,16 +77,53 @@ class DemoUi(QWidget, Ui_Form):
         # 将迭代次数设置到result_interation上
         self.result_interation.setText(str(iterations))
         # Update the plot with simulation results
-        # self.update_plot([result.x[0]], [result.x[1]], [result.x[2]])
+        # self.on_plotButton_clicked([result.x[0]], [result.x[1]], [result.x[2]])
+        self.xs_r = result.x[0]
+        self.ys_r = result.x[1]
+        self.qs_r = result.x[2]
 
     def calculate(self):
         pass
 
     # 实现定义的槽函数逻辑
 
+    def on_plotButton_clicked(self):
+        # Close all old figures
+        plt.close('all')
+        # Get the coordinates of the origin
+        origin_x = self.xs_r
+        origin_y = self.ys_r
+
+        # Create a meshgrid covering the 500x500 range
+        x = np.linspace(origin_x - 50, origin_x + 450, 500)
+        y = np.linspace(origin_y - 250, origin_y + 250, 500)
+        X, Y = np.meshgrid(x, y)
+
+        # Calculate the Gaussian concentration for each grid point
+        Z = gaussian(X, Y, self.qs_r)
+
+        # 绘制热图
+        plt.imshow(Z, extent=[-5.0, 45.0, -25.0, 25.0], origin='lower', cmap='hot', vmin=0, vmax=70)
+
+        # Add a colorbar
+        plt.colorbar()
+
+        # Add labels and title
+        plt.xlabel('X')
+        plt.ylabel('Y')
+        plt.title('Gaussian Concentration Heatmap')
+
+        # Add known heat sources to the plot
+        for (x, y, heat) in self.known_heat_sources:
+            plt.scatter(x, y, color='green', marker='o', s=50, label='Known Heat Source')  # Plot the known heat sources
+
+        # Show the plot
+        plt.show()
+        plt.close()
+        
+        
     def on_calculateButton2_clicked(self):
         # 获取输入框的值
-        global con1_x, con1_y, con1_q, con2_x, con2_y, con2_q, con3_x, con3_y, con3_q
         con1_x = self.con1_x.text()
         con1_y = self.con1_y.text()
         con1_q = self.con1_q.text()
@@ -131,7 +173,10 @@ class DemoUi(QWidget, Ui_Form):
         # 将迭代次数设置到result_interation上
         self.result_interation.setText(str(iterations))
         # Update the plot with simulation results
-        # self.update_plot([best_xs], [best_ys], [best_q])
+        # self.on_plotButton_clicked([best_xs], [best_ys], [best_q])
+        self.xs_r = best_xs
+        self.ys_r = best_ys
+        self.qs_r = best_q
 
     # def update_plot(self, xs, ys, qs):
     #     # Clear previous plot data
