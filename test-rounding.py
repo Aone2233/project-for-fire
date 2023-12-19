@@ -1,42 +1,44 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QTextEdit, QScrollArea
+import time
+from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtWidgets import *
+from PyQt5.QtCore import *
 
-class ScrollableTextWidgets(QWidget):
+
+class test(QWidget):
+
     def __init__(self):
-        super().__init__()
+        super(test, self).__init__()
 
-        self.init_ui()
+    def setupUi(self):
+        self.setFixedSize(500, 90)
+        self.main_widget = QtWidgets.QWidget(self)
+        self.progressBar = QtWidgets.QProgressBar(self.main_widget)
+        self.progressBar.setGeometry(QtCore.QRect(20, 20, 450, 50))
+        # 创建并启用子线程
+        self.thread_1 = Worker()
+        self.thread_1.progressBarValue.connect(self.copy_file)
+        self.thread_1.start()
 
-    def init_ui(self):
-        # 创建一个滚动区域
-        scroll_area = QScrollArea()
+    def copy_file(self, i):
+        self.progressBar.setValue(i)
 
-        # 创建一个主窗口，包含多个文本框
-        main_widget = QWidget()
-        layout = QVBoxLayout(main_widget)
 
-        for i in range(5):
-            text_edit = QTextEdit()
-            layout.addWidget(text_edit)
+class Worker(QThread):
+    progressBarValue = pyqtSignal(int)  # 更新进度条
 
-        # 设置主窗口为滚动区域的小部件
-        scroll_area.setWidget(main_widget)
-        scroll_area.setWidgetResizable(True)
+    def __init__(self):
+        super(Worker, self).__init__()
 
-        # 创建垂直布局
-        main_layout = QVBoxLayout()
+    def run(self):
+        for i in range(101):
+            time.sleep(0.1)
+            self.progressBarValue.emit(i)  # 发送进度条的值 信号
 
-        # 将滚动区域添加到垂直布局
-        main_layout.addWidget(scroll_area)
-
-        # 将布局设置为主窗口的布局
-        self.setLayout(main_layout)
-
-        self.setWindowTitle('Scrollable Text Widgets')
-        self.setGeometry(100, 100, 400, 300)
-        self.show()
 
 if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    window = ScrollableTextWidgets()
+    app = QtWidgets.QApplication(sys.argv)
+    testIns = test()
+    testIns.setupUi()
+    testIns.show()
     sys.exit(app.exec_())

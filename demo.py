@@ -1,10 +1,14 @@
 import sys
 import math
 import numpy as np
+import pyqtgraph as pg
+from PyQt5 import QtWidgets, QtCore
+from PyQt5.QtGui import QIcon
 from scipy.optimize import minimize
 from PyQt5.QtWidgets import *
 import random
-import threading
+
+from first import Ui_Form
 
 # q = 0.05  # 毒气源强度
 H = 0.5  # 毒气源高度
@@ -12,16 +16,17 @@ u = 1.05  # 实时风速，x方向上的风速
 # sigma_x = 0.105  # x方向上的标准差
 Q_calculate = 0.05  # 毒气源强度
 
-#  此处引入的是我们设计的界面的类，在first.py文件中
-from first import Ui_Form
 
-
-# 新建类来继承UiForm，这样我们再更改界面后，不用再去修改我们写的逻辑
 class DemoUi(QWidget, Ui_Form):
     # 类的初始化
     def __init__(self):
         super(DemoUi, self).__init__()
         self.setupUi(self)
+        self.setWindowTitle('毒气泄漏源定位')
+        self.setWindowIcon(QIcon('logo.ico'))
+        self.calculateButton1.clicked.connect(self.on_calculateButton1_clicked)
+        self.calculateButton2.clicked.connect(self.on_calculateButton2_clicked)
+        self.progress_bar.setValue(0)
 
     # 实现定义的槽函数逻辑
     def on_calculateButton1_clicked(self):
@@ -38,26 +43,11 @@ class DemoUi(QWidget, Ui_Form):
         con3_q = self.con3_q.text()
 
         # 将输入框的值转换为float类型
-        def gaussian(x, y, q):
-            z = 0
-            distance = np.sqrt(x ** 2 + y ** 2)  # 距原点距离
-            sigma_y = 0.22 * distance / np.sqrt(1 + 0.0001 * distance)  # y方向上的标准差
-            sigma_z = 0.20 * x  # z方向上的标准差
-
-            term1 = q / (2 * math.pi * u * sigma_y * sigma_z)
-
-            k = -0.5 * (y ** 2 / sigma_y ** 2)
-            term2 = np.exp(k)
-
-            term3 = np.exp(-(z - H) ** 2 / (2 * sigma_z ** 2)) + np.exp(-(z + H) ** 2 / (2 * sigma_z ** 2))
-
-            gau_result = term1 * term2 * term3 * 100000
-            # print(term1, term2, term3)
-            return gau_result
 
         # 已知的热量点位
         known_heat_sources = [(2, 3, gaussian(2, 3, Q_calculate)), (7, 5, gaussian(7, 5, Q_calculate)),
-                                  (4, 7, gaussian(4, 7, Q_calculate))]  # Initialize with zero heat
+                              (4, 7, gaussian(4, 7, Q_calculate))]  # Initialize with zero heat
+
         def objective(params):
             xs, ys, q = params
             error = 0
@@ -79,9 +69,13 @@ class DemoUi(QWidget, Ui_Form):
         iterations = result.nit
         # 将迭代次数设置到result_interation上
         self.result_interation.setText(str(iterations))
+        # Update the plot with simulation results
+        self.update_plot([result.x[0]], [result.x[1]], [result.x[2]])
 
     def calculate(self):
         pass
+
+    # 实现定义的槽函数逻辑
 
     def on_calculateButton2_clicked(self):
         # 获取输入框的值
@@ -96,88 +90,84 @@ class DemoUi(QWidget, Ui_Form):
         con3_y = self.con3_y.text()
         con3_q = self.con3_q.text()
 
-        # 将输入框的值转换为float类型
-        def gaussian(x, y, q):
-            z = 0
-            distance = np.sqrt(x ** 2 + y ** 2)
-            sigma_y = 0.22 * distance / np.sqrt(1 + 0.0001 * distance)
-            sigma_z = 0.20 * x
-
-            term1 = q / (2 * math.pi * u * sigma_y * sigma_z)
-
-            k = -0.5 * (y ** 2 / sigma_y ** 2)
-            term2 = np.exp(k)
-
-            term3 = np.exp(-(z - H) ** 2 / (2 * sigma_z ** 2)) + np.exp(-(z + H) ** 2 / (2 * sigma_z ** 2))
-
-            gau_result = term1 * term2 * term3 * 100000
-            # print(term1, term2, term3)
-            return gau_result
-
         # 已知的热量点位
         known_heat_sources = [(2, 3, gaussian(2, 3, Q_calculate)), (7, 5, gaussian(7, 5, Q_calculate)),
                               (4, 7, gaussian(4, 7, Q_calculate))]
 
-        # 初始猜测的泄漏源点坐标
-        initial_guess = [random.uniform(-5, 5), random.uniform(-5, -5)]
-
         def calculate_error(xs, ys, qs):
             error = 0
             for (x, y, heat) in known_heat_sources:
-                error += np.sqrt((heat - gaussian(x - xs, y - ys, qs)) ** 2)
+                error += (heat ** 2 - gaussian(x - xs, y - ys, qs)) ** 2
             return error
 
         # 进行蒙特卡罗模拟
-        num_samples = 500000
-        num_threads = 5
+        num_samples = 5000
 
+        for i in range(num_samples):
+            # 初始化最小误差为正无穷
+            min_error = float('inf')
+            best_xs, best_ys, best_q = None, None, None
+            xs, ys = random.uniform(-10, 10), random.uniform(-10, 10)
+            qs = random.uniform(0, 1)
+            error = calculate_error(xs, ys, qs)
 
-        # 定义子循环的函数
-        def worker(start, end):
-            global min_error, best_xs, best_ys, best_q
-            min_error = 1e-20
-            best_xs, best_ys = None, None
-            best_q = None
-            for i in range(start, end):
-                xs, ys = random.uniform(-10, 10), random.uniform(-10, 10)
-                qs = random.uniform(0, 1)
-                error = calculate_error(xs, ys, qs)
-                if error < min_error:
-                    min_error = error
-                    best_xs, best_ys = xs, ys
-                    best_q = qs
+            # 如果当前误差更小，则更新最小误差和对应的坐标和强度值
+            if error < min_error:
+                min_error = error
+                best_xs, best_ys, best_q = xs, ys, qs
 
-
-        # 开启多线程
-        threads = []
-        for i in range(num_threads):
-            start = int(i * num_samples / num_threads)
-            end = int((i + 1) * num_samples / num_threads)
-            t = threading.Thread(target=worker, args=(start, end))
-            threads.append(t)
-            t.start()
-
-        # 等待所有线程结束
-        for t in threads:
-            t.join()
+            # 计算进度
+            progress = int(round((i / num_samples) * 100))
+            self.progress_bar.setValue(progress)
 
         # 将计算得到的result值设置到result_x，result_y和result_q上
-        self.result_out_x.setText(str(best_xs))
-        self.result_out_y.setText(str(best_ys))
-        self.result_out_q.setText(str(best_q))
+        self.result_out_x.setText(str(best_xs) if best_xs is not None else '')
+        self.result_out_y.setText(str(best_ys) if best_ys is not None else '')
+        self.result_out_q.setText(str(best_q) if best_q is not None else '')
         # 获取迭代次数
-        iterations = 10000
+        iterations = num_samples
         # 将迭代次数设置到result_interation上
-
         self.result_interation.setText(str(iterations))
+        # Update the plot with simulation results
+        self.update_plot([best_xs], [best_ys], [best_q])
 
-    def update_progess(self, value):
+    def update_plot(self, xs, ys, qs):
+        # Clear previous plot data
+        self.plot_widget.clear()
 
+        # Plot the new data
+        self.plot_widget.plot(xs, ys, pen=None, symbol='o', symbolBrush=(255, 0, 0), symbolSize=10)
+
+        # Set labels and title
+        self.plot_widget.setLabel('left', 'Y Axis')
+        self.plot_widget.setLabel('bottom', 'X Axis')
+        self.plot_widget.setTitle('Simulation Results')
+
+    def calculate(self):
         pass
+
+
+def gaussian(x, y, q):
+    z = 0
+    distance = np.sqrt(x ** 2 + y ** 2)  # 距原点距离
+    sigma_y = 0.22 * distance / np.sqrt(1 + 0.0001 * distance)  # y方向上的标准差
+    sigma_z = 0.20 * x  # z方向上的标准差
+
+    term1 = q / (2 * math.pi * u * sigma_y * sigma_z)
+
+    k = -0.5 * (y ** 2 / sigma_y ** 2)
+    term2 = np.exp(k)
+
+    term3 = np.exp(-(z - H) ** 2 / (2 * sigma_z ** 2)) + np.exp(-(z + H) ** 2 / (2 * sigma_z ** 2))
+
+    gau_result = term1 * term2 * term3 * 100000
+    # print(term1, term2, term3)
+    return gau_result
+
 
 # 此处是测试代码
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    dm = DemoUi()
-    dm.show()
-    sys.exit(app.exec())
+    demo = DemoUi()
+    demo.show()
+    sys.exit(app.exec_())
