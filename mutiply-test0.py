@@ -49,6 +49,16 @@ known_heat_sources = [(2, 3, gaussian(2 - yo, 3 - yo, Q_calculate)),
                       (15, 10, gaussian(15 - xo, 10 - yo, Q_calculate)),
                       (15, -10, gaussian(15 - xo, -10 - yo, Q_calculate))]  # 已知泄漏点位
 
+# 在每个已知的热源周围的±2范围内生成一个0.5x0.5的网格
+additional_heat_sources = []
+for (x, y, heat) in known_heat_sources:
+    for x_new in np.arange(x - 2, x + 2, 0.2):
+        for y_new in np.arange(y - 2, y + 2, 0.2):
+            heat_new = gaussian(x_new - xo, y_new - yo, Q_calculate)
+            additional_heat_sources.append((x_new, y_new, heat_new))
+
+# 将新生成的热源添加到已知的热源列表中
+known_heat_sources.extend(additional_heat_sources)
 
 def objective(params):
     xs, ys, q = params  # 这里的xs, ys, q会导入初始值，即initial_guess
@@ -93,24 +103,15 @@ result_1 = minimize(objective_1, initial_guess_1, method='L-BFGS-B')
 iterations_1 = result_1.nit
 
 
-print("反解的泄漏源点浓度：", result_1.x)
+print("反解的泄漏源点浓度：", {'%.7f' % result_1.x[0]})
 print("迭代次数：", iterations_1)
-print("目标函数值：", result_1.fun)
 
 ###################################
-
-# # 定义新的目标函数,即模式搜索算法的目标函数
-# def objective_pattern_search(params):
-#     xs, ys, qs = params
-#     error = 0
-#     for (x, y, heat) in known_heat_sources:
-#         error += (heat - gaussian(x - xs, y - ys, qs)) ** 2
-#     return error
-
+# 优化算法实现的初始猜测泄漏源点坐标
 # initial_guess = [result.x[0], result.x[1], result_1.x[0]]
 
 # # 使用模式搜索算法找到最优解
-# result_pattern_search = basinhopping(objective_pattern_search, initial_guess, niter=10000, stepsize=0.1)
+# result_pattern_search = basinhopping(objective, initial_guess, niter=10000, stepsize=0.1)
 
 
 # # 输出最优解和对应的目标函数值
