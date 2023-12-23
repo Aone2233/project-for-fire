@@ -2,27 +2,34 @@ import sys
 import math
 import numpy as np
 import pyqtgraph as pg
+import self
 from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtGui import QIcon
-from scipy.optimize import minimize
+from scipy.optimize import minimize, differential_evolution
 from PyQt5.QtWidgets import *
 import random
 import matplotlib.pyplot as plt
 
 # q = 0.05  # 毒气源强度
 H = 0.5  # 毒气源高度
+global u, u_x, u_y, ang_u
 u = 1.05  # 实时风速，x方向上的风速
 # sigma_x = 0.105  # x方向上的标准差
 Q_calculate = 0.05  # 毒气源强度
-
+# 已知的热量点位
+xo = random.uniform(2, 15)
+yo = random.uniform(-5, 5)
+# 全局变量声明
+global con1_x, con1_y, con1_q, con2_x, con2_y, con2_q, con3_x, con3_y, con3_q, con4_x, con4_y, con4_q, con5_x, con5_y, con5_q, con6_x, con6_y, con6_q, con7_x, con7_y, con7_q, con8_x, con8_y, con8_q, con9_x, con9_y, con9_q, con10_x, con10_y, con10_q, xs_r, ys_r, qs_r
 from first import Ui_Form
-#全局变量声明
-global con1_x, con1_y, con1_q, con2_x, con2_y, con2_q, con3_x, con3_y, con3_q, xs_r, ys_r, qs_r
+
 
 class DemoUi(QWidget, Ui_Form):
     # 类的初始化
     def __init__(self):
         super(DemoUi, self).__init__()
+        self.known_heat_sources_0 = None
+        self.known_heat_sources = []
         self.setupUi(self)
         self.setWindowTitle('毒气泄漏源定位')
         self.setWindowIcon(QIcon('logo.ico'))
@@ -36,24 +43,55 @@ class DemoUi(QWidget, Ui_Form):
 
         # self.plot_widget = pg.PlotWidget()
 
+        # 获取输入框的值
+
     # 实现定义的槽函数逻辑
     def on_calculateButton1_clicked(self):
-        # 获取输入框的值
-        con1_x = self.con1_x.text()
-        con1_y = self.con1_y.text()
-        con1_q = self.con1_q.text()
-        con2_x = self.con2_x.text()
-        con2_y = self.con2_y.text()
-        con2_q = self.con2_q.text()
-        con3_x = self.con3_x.text()
-        con3_y = self.con3_y.text()
-        con3_q = self.con3_q.text()
+        # self.con1_x = self.con1_x.text()
+        # self.con1_y = self.con1_y.text()
+        # self.con1_q = self.con1_q.text()
+        # self.con2_x = self.con2_x.text()
+        # self.con2_y = self.con2_y.text()
+        # self.con2_q = self.con2_q.text()
+        # self.con3_x = self.con3_x.text()
+        self.known_heat_sources_0 = [(2, 3, gaussian(2 - yo, 3 - yo, Q_calculate)),
+                                     (2, -3, gaussian(2 - xo, -3 - yo, Q_calculate)),
+                                     (4, 7, gaussian(4 - xo, 7 - yo, Q_calculate)),
+                                     (4, -7, gaussian(4 - xo, -7 - yo, Q_calculate)),
+                                     (15, 10, gaussian(15 - xo, 10 - yo, Q_calculate)),
+                                     (15, -10, gaussian(15 - xo, -10 - yo, Q_calculate))]  # 已知泄漏点位
 
-        # 将输入框的值转换为float类型
+        # # 将输入的内容加入到已知的热量点位中
+        # if con1_x != '' and con1_y != '' and con1_q != '':
+        #     self.known_heat_sources.append((float(con1_x), float(con1_y), float(con1_q)))
+        # if con2_x != '' and con2_y != '' and con2_q != '':
+        #     self.known_heat_sources.append((float(con2_x), float(con2_y), float(con2_q)))
+        # if con3_x != '' and con3_y != '' and con3_q != '':
+        #     self.known_heat_sources.append((float(con3_x), float(con3_y), float(con3_q)))
+        # if con4_x != '' and con4_y != '' and con4_q != '':
+        #     self.known_heat_sources.append((float(con4_x), float(con4_y), float(con4_q)))
+        # if con5_x != '' and con5_y != '' and con5_q != '':
+        #     self.known_heat_sources.append((float(con5_x), float(con5_y), float(con5_q)))
+        # if con6_x != '' and con6_y != '' and con6_q != '':
+        #     self.known_heat_sources.append((float(con6_x), float(con6_y), float(con6_q)))
+        # if con7_x != '' and con7_y != '' and con7_q != '':
+        #     self.known_heat_sources.append((float(con7_x), float(con7_y), float(con7_q)))
+        # if con8_x != '' and con8_y != '' and con8_q != '':
+        #     self.known_heat_sources.append((float(con8_x), float(con8_y), float(con8_q)))
+        # if con9_x != '' and con9_y != '' and con9_q != '':
+        #     self.known_heat_sources.append((float(con9_x), float(con9_y), float(con9_q)))
+        # if con10_x != '' and con10_y != '' and con10_q != '':
+        #     self.known_heat_sources.append((float(con10_x), float(con10_y), float(con10_q)))
 
-        # 已知的热量点位
-        self.known_heat_sources = [(2, 3, gaussian(2, 3, Q_calculate)), (7, 5, gaussian(7, 5, Q_calculate)),
-                              (4, 7, gaussian(4, 7, Q_calculate))]  # Initialize with zero heat
+        additional_heat_sources = []
+        for (x, y, heat) in self.known_heat_sources_0:
+            for x_new in np.arange(x - 1.5, x + 1.5, 0.5):
+                for y_new in np.arange(y - 2, y + 2, 0.5):
+                    heat_new = gaussian(x_new - xo, y_new - yo, Q_calculate)
+                    additional_heat_sources.append((x_new, y_new, heat_new))
+
+        # 将新生成的热源添加到已知的热源列表中
+        self.known_heat_sources.extend(additional_heat_sources)
 
         def objective(params):
             xs, ys, q = params
@@ -62,25 +100,41 @@ class DemoUi(QWidget, Ui_Form):
                 error += np.sqrt((heat - gaussian(x - xs, y - ys, q)) ** 2)
             return error  # Minimize the negative of the Gaussian function
 
-        # 初值估计
-        initial_guess = [0.5, 0.5, 0.5]
+        # 定义参数的边界
+        bounds = [(-20.0, 20.0), (-20.0, 20.0), (0, 2.0)]
 
-        result = minimize(objective, initial_guess, method='L-BFGS-B', options={'maxiter': 10000})
+        # 使用优化算法找到源的坐标
+        result = differential_evolution(
+            objective, bounds, tol=1e-15, atol=1e-15, maxiter=10000)
+
+        # 获取迭代次数
+        iterations = result.nit
+
+        # 优化算法实现的初始猜测泄漏源点浓度
+        initial_guess_1 = 0.5
+
+        def objective_1(params):
+            qs = params
+            error = 0
+            for (x, y, heat) in self.known_heat_sources:
+                error += (heat - gaussian(x - result.x[0], y - result.x[1], qs)) ** 2
+            return error
+
+        # 使用优化算法找到源的坐标
+        result_1 = minimize(objective_1, initial_guess_1, method='L-BFGS-B')
         # 最小化objection，初值条件是initial_guess，采用的算法是L-BFGS-B
 
         # 将计算得到的result值设置到result_x，result_y和result_q上
         self.result_out_x.setText(str(result.x[0]))
         self.result_out_y.setText(str(result.x[1]))
-        self.result_out_q.setText(str(result.x[2]))
-        # 获取迭代次数
-        iterations = result.nit
+        self.result_out_q.setText(str(result_1.x[0]))
         # 将迭代次数设置到result_interation上
         self.result_interation.setText(str(iterations))
         # Update the plot with simulation results
         # self.on_plotButton_clicked([result.x[0]], [result.x[1]], [result.x[2]])
         self.xs_r = result.x[0]
         self.ys_r = result.x[1]
-        self.qs_r = result.x[2]
+        self.qs_r = result_1.x[0]
 
     def calculate(self):
         pass
@@ -114,34 +168,38 @@ class DemoUi(QWidget, Ui_Form):
         plt.title('Gaussian Concentration Heatmap')
 
         # Add known heat sources to the plot
-        for (x, y, heat) in self.known_heat_sources:
+        for (x, y, heat) in self.known_heat_sources_0:
             plt.scatter(x, y, color='green', marker='o', s=50, label='Known Heat Source')  # Plot the known heat sources
 
         # Show the plot
         plt.show()
         plt.close()
-        
-        
-    def on_calculateButton2_clicked(self):
-        # 获取输入框的值
-        con1_x = self.con1_x.text()
-        con1_y = self.con1_y.text()
-        con1_q = self.con1_q.text()
-        con2_x = self.con2_x.text()
-        con2_y = self.con2_y.text()
-        con2_q = self.con2_q.text()
-        con3_x = self.con3_x.text()
-        con3_y = self.con3_y.text()
-        con3_q = self.con3_q.text()
 
-        # 已知的热量点位
-        known_heat_sources = [(2, 3, gaussian(2, 3, Q_calculate)), (7, 5, gaussian(7, 5, Q_calculate)),
-                              (4, 7, gaussian(4, 7, Q_calculate))]
+    # 对于蒙卡方法的求解过程
+    def on_calculateButton2_clicked(self):
+
+        self.known_heat_sources_0 = [(2, 3, gaussian(2 - yo, 3 - yo, Q_calculate)),
+                                     (2, -3, gaussian(2 - xo, -3 - yo, Q_calculate)),
+                                     (4, 7, gaussian(4 - xo, 7 - yo, Q_calculate)),
+                                     (4, -7, gaussian(4 - xo, -7 - yo, Q_calculate)),
+                                     (15, 10, gaussian(15 - xo, 10 - yo, Q_calculate)),
+                                     (15, -10, gaussian(15 - xo, -10 - yo, Q_calculate))]  # 已知泄漏点位
+
+        additional_heat_sources = []
+        for (x, y, heat) in self.known_heat_sources_0:
+            for x_new in np.arange(x - 1.5, x + 1.5, 0.5):
+                for y_new in np.arange(y - 2, y + 2, 0.5):
+                    heat_new = gaussian(x_new - xo, y_new - yo, Q_calculate)
+                    additional_heat_sources.append((x_new, y_new, heat_new))
+
+        # 将新生成的热源添加到已知的热源列表中
+        known_heat_sources = []
+        known_heat_sources.extend(additional_heat_sources)
 
         def calculate_error(xs, ys, qs):
             error = 0
             for (x, y, heat) in known_heat_sources:
-                error += (heat - gaussian(x - xs, y - ys, qs))**2
+                error += (heat - gaussian(x - xs, y - ys, qs)) ** 2
             return error
 
         # 进行蒙特卡罗模拟
