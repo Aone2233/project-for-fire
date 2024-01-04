@@ -9,7 +9,11 @@ import matplotlib.pyplot as plt
 H = 0.5  # 毒气源高度
 u = 0.05  # 实时风速
 # sigma_x = 0.105  # x方向上的标准差
-Q_calculate = 0.05
+Q_calculate = random.uniform(0.01, 0.6)  # 毒气源强度
+print("Q_calculate:", Q_calculate)
+xo = random.uniform(2, 15)
+yo = random.uniform(-5, 5)
+print(f"初始的泄漏源点坐标：({'%.6f' % xo}, {'%.6f' % yo})")
 
 
 # z = 0
@@ -17,12 +21,8 @@ Q_calculate = 0.05
 def gaussian(x, y, q):
     z = 0
     distance = np.sqrt(x ** 2 + y ** 2)  # 距原点距离
-    sigma_y = 0.22 * x / (np.sqrt(1 + 0.0001 * x) + 1e-20)  # y方向上的标准差
-    sigma_z = 0.20 * x + 1e-20  # z方向上的标准差
-
-    # 确保sigma_y和sigma_z的值不会小于1e-8
-    sigma_y = np.where(sigma_y < 1e-20, 1e-20, sigma_y)
-    sigma_z = np.where(sigma_z < 1e-20, 1e-20, sigma_z)
+    sigma_y = 0.22 * distance / np.sqrt(1 + 0.0001 * distance)  # y方向上的标准差
+    sigma_z = 0.20 * x  # z方向上的标准差
 
     term1 = q / (2 * math.pi * u * sigma_y * sigma_z)
 
@@ -31,17 +31,32 @@ def gaussian(x, y, q):
 
     term3 = np.exp(-(z - H) ** 2 / (2 * sigma_z ** 2)) + np.exp(-(z + H) ** 2 / (2 * sigma_z ** 2))
 
-    gau_result = term1 * term2 * term3 * 500000
+    gau_result = term1 * term2 * term3 * 100000
     # print(term1, term2, term3)
-    # Use np.where to return gau_result where x >= 0, else return 0
-    return np.where(x >= 0, gau_result, 0)
+    return gau_result
 
 
 # print(gaussian(2, 3))
 
 # 已知的热量点位
-known_heat_sources = [(2, 3, gaussian(2, 3, Q_calculate)), (7, 5, gaussian(7, 5, Q_calculate)),
-                      (4, 7, gaussian(4, 7, Q_calculate))]
+known_heat_sources_0 = [(2, 3, gaussian(2 - yo, 3 - yo, Q_calculate)),
+                        (2, -3, gaussian(2 - xo, -3 - yo, Q_calculate)),
+                        (4, 7, gaussian(4 - xo, 7 - yo, Q_calculate)),
+                        (4, -7, gaussian(4 - xo, -7 - yo, Q_calculate)),
+                        (15, 10, gaussian(15 - xo, 10 - yo, Q_calculate)),
+                        (15, -10, gaussian(15 - xo, -10 - yo, Q_calculate))]  # 已知泄漏点位
+
+# 在每个已知的热源周围±2范围内生成一个0.5x0.5的网格
+additional_heat_sources = []
+for (x, y, heat) in known_heat_sources_0:
+    for x_new in np.arange(x - 1.5, x + 1.5, 0.5):
+        for y_new in np.arange(y - 2, y + 2, 0.5):
+            heat_new = gaussian(x_new - xo, y_new - yo, Q_calculate)
+            additional_heat_sources.append((x_new, y_new, heat_new))
+
+# 将新生成的热源添加到已知的热源列表中
+known_heat_sources = []
+known_heat_sources.extend(additional_heat_sources)
 
 
 # # 初始猜测的泄漏源点坐标
